@@ -1,6 +1,6 @@
-import {BotFrameworkAdapter, MemoryStorage, ConversationState} from 'botbuilder';
+import {BotFrameworkAdapter} from 'botbuilder';
 import * as restify from 'restify';
-import {dialogs} from "./jobs/waterfall";
+import {makePersistUserData} from "./jobs/resersve-table/waterfall/persist-user-data";
 
 // Create server
 let server = restify.createServer();
@@ -14,14 +14,8 @@ const adapter = new BotFrameworkAdapter({
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
 
-// Define conversation state shape
-interface EchoState {
-    count: number;
-}
-
-// Add conversation state middleware
-const conversationState = new ConversationState<EchoState>(new MemoryStorage());
-adapter.use(conversationState);
+// make sure you define dialogs and conversation before process activity
+const {dialogs, conversationState} = makePersistUserData(adapter);
 
 // Listen for incoming requests 
 server.post('/api/messages', (req, res) => {
@@ -39,7 +33,7 @@ server.post('/api/messages', (req, res) => {
                 await dc.begin('greeting');
             }
             else if (context.activity.text.match(/(reserve)(.*)(table)/ig)) {
-                await dc.begin('reserveTable');
+                await dc.begin('reserveTableAndPersistUserData');
             }
         }
 
